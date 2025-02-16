@@ -11,8 +11,7 @@ import (
 const completionsURL = "https://api.openai.com/v1/chat/completions"
 
 // Model:    "gpt-4", // You can use "gpt-3.5-turbo" for a cheaper option
-// const model = "gpt-3.5-turbo"
-const model = "o3.mini"
+const model = "gpt-3.5-turbo"
 
 // Structs for API request and response
 type Message struct {
