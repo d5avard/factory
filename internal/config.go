@@ -15,7 +15,14 @@ var configPath = ".config/factory"
 
 // Define struct for config
 type Config struct {
-	APIKey string `toml:"api_key"`
+	APIKey   string `toml:"api_key"`
+	Database struct {
+		Host     string `toml:"host"`
+		Port     int    `toml:"port"`
+		User     string `toml:"user"`
+		Password string `toml:"password"`
+		Name     string `toml:"name"`
+	} `toml:"database"`
 }
 
 func GetDebugVar() bool {
