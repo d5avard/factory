@@ -57,8 +57,10 @@ func GetConfigFilename() (string, error) {
 		}
 		return filepath.Join(pwd, configFilename), nil
 	} else {
-		home := os.Getenv("HOME")
-		if home == "" {
+		var home string
+		home, err = os.UserHomeDir()
+
+		if err != nil {
 			return "", errors.New("HOME environment variable not set")
 		}
 		return filepath.Join(home, configPath, configFilename), nil

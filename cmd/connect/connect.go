@@ -1,31 +1,36 @@
 package main
 
-/*
-dbURL might look like:
-"postgres://username:password@localhost:5432/database_name"
-*/
-
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/d5avard/factory/internal"
-	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func main() {
-	var filename string
-	var err error
+type QuestionRec struct {
+	ID       int
+	Question string
+}
 
-	filename, err = internal.GetConfigFilename()
+type AnswerRec struct {
+	ID     int
+	Answer string
+}
+
+type TagsRec struct {
+	ID   int
+	Tags []string
+}
+
+func main() {
+	filename, err := internal.GetConfigFilename()
 	if err != nil {
 		log.Fatalf("Error getting config filename: %v", err)
 	}
 
-	// Load config file
 	config, err := internal.LoadConfig(filename)
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
@@ -44,7 +49,8 @@ func connect(config internal.Config) error {
 		config.Database.Port,
 		config.Database.Name,
 	)
-	conn, err := sql.Open("pgx", dsn)
+
+	conn, err := pgxpool.New(context.Background(), dsn)
 	if err != nil {
 		return fmt.Errorf("connect to db error: %w", err)
 	}
@@ -53,89 +59,26 @@ func connect(config internal.Config) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	if err := conn.PingContext(ctx); err != nil {
-		return fmt.Errorf("failed to ping db: %w", err)
-	}
-	log.Println("Connected to database")
-
-	s, err := NewStorage(ctx, conn)
+	q := QuestionRec{Question: "What is the capital of France?"}
+	a := AnswerRec{Answer: "Paris"}
+	ts := TagsRec{Tags: []string{"geography", "capital", "France"}}
+	var id int
+	id, err = AddQuestionAnswerTags(ctx, conn, q, a, ts)
 	if err != nil {
-		return fmt.Errorf("new storage error: %w", err)
+		return fmt.Errorf("add question answer tags error: %w", err)
 	}
-	defer s.Close()
-
-	q, err := s.GetQuestion(ctx, 1)
-	if err != nil {
-		return fmt.Errorf("get question error: %w", err)
-	}
-	log.Printf("Retrieved question: %+v\n", q)
-
-	q.Question = "What is the capital of France?"
-	err = s.AddQuestion(ctx, q)
-	if err != nil {
-		return fmt.Errorf("add question error: %w", err)
-	}
-	log.Println("Added question to database")
+	log.Println("Added question, answer, and tags to database", id)
 
 	return nil
 }
 
-type QuestionRec struct {
-	ID       int
-	Question string
-}
-
-type Storage struct {
-	conn            *sql.DB
-	getQuestionStmt *sql.Stmt
-	addQuestionStmt *sql.Stmt
-}
-
-func NewStorage(ctx context.Context, conn *sql.DB) (*Storage, error) {
-	s := Storage{conn: conn}
-	var err error
-
-	s.getQuestionStmt, err = conn.PrepareContext(
-		ctx,
-		`SELECT "question" FROM "questions" WHERE "id" = $1`,
-	)
+func AddQuestionAnswerTags(ctx context.Context, conn *pgxpool.Pool, q QuestionRec, a AnswerRec, ts TagsRec) (int, error) {
+	const INSERT_QUERY = `SELECT insert_question_answer_tags($1, $2, $3)`
+	var questionId int
+	err := conn.QueryRow(ctx, INSERT_QUERY, q.Question, a.Answer, ts.Tags).Scan(&questionId)
 	if err != nil {
-		return nil, fmt.Errorf("prepare statement error: %w", err)
+		return -1, err
 	}
 
-	s.addQuestionStmt, err = conn.PrepareContext(
-		ctx,
-		`INSERT INTO "questions" ("question") VALUES ($1)`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("prepare statement error: %w", err)
-	}
-
-	return &s, nil
-}
-
-func (s *Storage) Close() {
-	if s.getQuestionStmt != nil {
-		s.getQuestionStmt.Close()
-	}
-	if s.addQuestionStmt != nil {
-		s.addQuestionStmt.Close()
-	}
-}
-
-func (s *Storage) GetQuestion(ctx context.Context, id int) (QuestionRec, error) {
-	q := QuestionRec{ID: id}
-	err := s.getQuestionStmt.QueryRowContext(ctx, id).Scan(&q.Question)
-	if err != nil {
-		return q, fmt.Errorf("failed to execute get question query: %w", err)
-	}
-	return q, nil
-}
-
-func (s *Storage) AddQuestion(ctx context.Context, q QuestionRec) error {
-	_, err := s.addQuestionStmt.ExecContext(ctx, q.Question)
-	if err != nil {
-		return fmt.Errorf("failed to execute add question query: %w", err)
-	}
-	return nil
+	return questionId, nil
 }

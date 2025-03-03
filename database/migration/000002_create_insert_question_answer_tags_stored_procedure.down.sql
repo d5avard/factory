@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS insert_question_answer_tags;
