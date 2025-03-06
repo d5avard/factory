@@ -46,10 +46,10 @@ func GetDebugVar() bool {
 	return false
 }
 
-func GetConfigFilename() (string, error) {
+func GetConfigFilename(debug bool) (string, error) {
 	var err error
 
-	if GetDebugVar() {
+	if debug {
 		var pwd string
 		if pwd, err = os.Getwd(); err != nil {
 			fmt.Println("Error:", err)

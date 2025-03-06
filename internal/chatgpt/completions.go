@@ -20,8 +20,12 @@ type Message struct {
 }
 
 type ChatRequest struct {
-	Model    string    `json:"model"`
-	Messages []Message `json:"messages"`
+	Model       string      `json:"model"`
+	Messages    []Message   `json:"messages"`
+	Max_tokens  int         `json:"max_tokens"`
+	N           int         `json:"n"`
+	Stop        interface{} `json:"stop"`
+	Temperature float64     `json:"temperature"`
 }
 
 type ChatResponse struct {
@@ -40,8 +44,12 @@ func GetCompletions(apiKey, question string) (string, error) {
 
 	// o3-mini-2025-01-31
 	requestData := ChatRequest{
-		Model:    model,
-		Messages: messages,
+		Model:       model,
+		Messages:    messages,
+		Max_tokens:  1024,
+		N:           1,
+		Stop:        nil,
+		Temperature: 1,
 	}
 
 	// Convert struct to JSON
