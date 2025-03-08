@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"text/template"
@@ -10,36 +9,43 @@ import (
 	"github.com/d5avard/factory/internal/chatgpt"
 )
 
-type Response struct {
-	Message string `json:"message"`
-}
+var config internal.Config
+var messages []chatgpt.Message
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles("./web/index.html")
+	tmpl, err := template.ParseFiles("./web/templates/chat.html")
 	if err != nil {
-		http.Error(w, "Could not load template", http.StatusInternalServerError)
+		internal.HttpError(w, r, "Could not load template", http.StatusInternalServerError)
 		return
 	}
-	tmpl.Execute(w, nil)
+	err = tmpl.Execute(w, nil)
+	if err != nil {
+		internal.HttpError(w, r, "Could not render template", http.StatusInternalServerError)
+		return
+	}
+	internal.LogRequest(r, http.StatusText(http.StatusOK), http.StatusOK)
 }
 
 func getHandler(w http.ResponseWriter, r *http.Request) {
 	question := r.URL.Query().Get("question")
 	if question == "" {
-		question = "No question provided"
+		internal.HttpError(w, r, "No question provided", http.StatusBadRequest)
+		return
 	}
-	log.Printf("Question: %s", question)
 
-	answer, err := chatgpt.GetCompletions(config.APIKey, question)
+	messages = append(messages, chatgpt.Message{Role: "user", Content: question})
+	answer, err := chatgpt.GetCompletions(config.APIKey, messages)
 	if err != nil {
-		log.Printf("Error: %s", err)
+		internal.HttpError(w, r, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
+	messages = append(messages, chatgpt.Message{Role: "assistant", Content: answer})
+
+	internal.LogRequest(r, http.StatusText(http.StatusOK), http.StatusOK)
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte(answer))
 }
-
-var config internal.Config
 
 func main() {
 	debug := internal.GetDebugVar()
@@ -47,15 +53,17 @@ func main() {
 
 	filename, err := internal.GetConfigFilename(debug)
 	if err != nil {
-		fmt.Println("Error:", err)
+		log.Println("Error:", err)
 		return
 	}
 
 	config, err = internal.LoadConfig(filename)
 	if err != nil {
-		fmt.Println("Error:", err)
+		log.Println("Error:", err)
 		return
 	}
+
+	messages = append(messages, chatgpt.Message{Role: "system", Content: "You are a helpful assistant."})
 
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/get", getHandler)

@@ -26,7 +26,10 @@ type TagsRec struct {
 }
 
 func main() {
-	filename, err := internal.GetConfigFilename()
+	debug := internal.GetDebugVar()
+	log.Println("Debug mode:", debug)
+
+	filename, err := internal.GetConfigFilename(debug)
 	if err != nil {
 		log.Fatalf("Error getting config filename: %v", err)
 	}

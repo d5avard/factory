@@ -6,6 +6,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+
+	"github.com/d5avard/factory/internal"
 )
 
 const completionsURL = "https://api.openai.com/v1/chat/completions"
@@ -35,14 +37,9 @@ type ChatResponse struct {
 }
 
 // Function to send request to OpenAI API
-func GetCompletions(apiKey, question string) (string, error) {
-	// Prepare request payload
-	messages := []Message{
-		{Role: "system", Content: "You are a helpful assistant."},
-		{Role: "user", Content: question},
-	}
+// func GetCompletions(apiKey, question string) (string, error) {
+func GetCompletions(apiKey string, messages []Message) (string, error) {
 
-	// o3-mini-2025-01-31
 	requestData := ChatRequest{
 		Model:       model,
 		Messages:    messages,
@@ -81,6 +78,8 @@ func GetCompletions(apiKey, question string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	internal.LogRequest(req, http.StatusText(resp.StatusCode), resp.StatusCode)
 
 	// Check for errors
 	// If an Api key is invalid

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -24,7 +25,10 @@ func main() {
 
 	fmt.Println("Question:", question)
 
-	if filename, err = internal.GetConfigFilename(); err != nil {
+	debug := internal.GetDebugVar()
+	log.Println("Debug mode:", debug)
+
+	if filename, err = internal.GetConfigFilename(debug); err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
@@ -37,7 +41,7 @@ func main() {
 	}
 
 	// Get response from ChatGPT
-	response, err := chatgpt.GetCompletions(config.APIKey, question)
+	response, err := chatgpt.GetCompletions(config.APIKey, []chatgpt.Message{})
 	if err != nil {
 		fmt.Println("Error:", err)
 		return

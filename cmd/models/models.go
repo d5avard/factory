@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/d5avard/factory/internal"
 	"github.com/d5avard/factory/internal/chatgpt"
@@ -11,7 +12,10 @@ func main() {
 	var filename string
 	var err error
 
-	if filename, err = internal.GetConfigFilename(); err != nil {
+	debug := internal.GetDebugVar()
+	log.Println("Debug mode:", debug)
+
+	if filename, err = internal.GetConfigFilename(debug); err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
