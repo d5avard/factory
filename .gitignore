@@ -29,3 +29,6 @@ config.ini
 
 # database file
 data/
+
+*.txt
+*.md

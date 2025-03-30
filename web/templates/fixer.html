@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Bug Fixer</title>
+    <style>
+        body {
+            font-family: Arial sans-serif;
+            background-color: #f6f7f9;
+        }
+
+        .header {
+            background-color: #3b5998;
+            color: #ffffff;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Code Bug Fixer</h1>
+    </div>
+    <form action="/" method="post">
+        <button class="submit-button" type="submit">Code Fix</button>
+        <div class="container">
+            <div class="left-column">
+                <textarea name="code" placeholder="Enter Code"></textarea>
+                <textarea name="error" placeholder="Enter Error"></textarea>
+            </div>
+            <div class="right-column">
+                <textarea class="fixed-code" name="fixed-code" placeholder="Fixed Code"
+                    readonly>{{ .fixed_code }}</textarea>
+                <textarea class="explanation" name="explanation" placeholder="Explanation"
+                    readonly>{{ .explanation }}</textarea>
+            </div>
+        </div>
+    </form>
+</body>
+
+</html>

@@ -34,7 +34,10 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	messages = append(messages, chatgpt.Message{Role: "user", Content: question})
-	answer, err := chatgpt.GetCompletions(config.APIKey, messages)
+	attr := chatgpt.NewDefaultAttributes()
+	attr.Max_completion_tokens = 1024
+	attr.Temperature = 1
+	answer, err := chatgpt.GetCompletions(config.APIKey, messages, attr)
 	if err != nil {
 		internal.HttpError(w, r, err.Error(), http.StatusInternalServerError)
 		return

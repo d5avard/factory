@@ -41,7 +41,10 @@ func main() {
 	}
 
 	// Get response from ChatGPT
-	response, err := chatgpt.GetCompletions(config.APIKey, []chatgpt.Message{})
+	attr := chatgpt.NewDefaultAttributes()
+	attr.Max_completion_tokens = 1024
+	attr.Temperature = 1
+	response, err := chatgpt.GetCompletions(config.APIKey, []chatgpt.Message{}, attr)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
