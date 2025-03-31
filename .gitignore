@@ -30,5 +30,8 @@ config.ini
 # database file
 data/
 
+# binaries folder
+bin/
+
 *.txt
 *.md

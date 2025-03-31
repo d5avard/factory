@@ -22,7 +22,7 @@ var rootCmd = &cobra.Command{
 
 		log.Printf("Starting server on %s", port)
 
-		addr := fmt.Sprintf("localhost:%s", port)
+		addr := fmt.Sprintf("0.0.0.0:%s", port)
 		if err := http.ListenAndServe(addr, nil); err != nil {
 			log.Fatalf("Could not start server: %s", err)
 		}
@@ -30,7 +30,7 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.Flags().StringVar(&port, "port", ":80", "Port to run the server on")
+	rootCmd.Flags().StringVar(&port, "port", "80", "Port to run the server on")
 }
 
 func statusHandler(w http.ResponseWriter, r *http.Request) {
