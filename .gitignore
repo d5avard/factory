@@ -33,5 +33,6 @@ data/
 # binaries folder
 bin/
 
+.DS_Store
 *.txt
 *.md
