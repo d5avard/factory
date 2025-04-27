@@ -9,7 +9,16 @@ RUN adduser \
     --home "/nonexistent" \
     --shell "/sbin/nologin" \
     --no-create-home \
-    "${USER}"
+    "${USER}" \
+    && groupadd tlsaccess \
+    && usermod -aG tlsaccess ${USER}
+
+RUN mkdir -p /etc/letsencrypt/live/ \
+    && mkdir -p /etc/letsencrypt/archive/ \
+    && chgrp -R tlsaccess /etc/letsencrypt/live/ \
+    && chgrp -R tlsaccess /etc/letsencrypt/archive/ \
+    && chmod -R 750 /etc/letsencrypt/live/ \
+    && chmod -R 750 /etc/letsencrypt/archive/
 
 RUN apt-get update && apt-get install -y ca-certificates
 
@@ -31,11 +40,12 @@ COPY --from=build /etc/passwd /etc/passwd
 COPY --from=build /etc/group /etc/group
 COPY --from=build /factory/web/web/templates /app/templates/
 COPY --from=build /go/bin/${APPLICATION} /app/${APPLICATION}
+COPY --from=build /etc/letsencrypt/live/ /etc/letsencrypt/live/
+COPY --from=build /etc/letsencrypt/archive/ /etc/letsencrypt/archive/
 
 ENV PATH="${PATH}:/app"
 
 ARG USER
-
 USER ${USER}:${USER}
 
 LABEL org.opencontainers.image.ref.name="${PACKAGE}" \
@@ -46,5 +56,8 @@ LABEL org.opencontainers.image.ref.name="${PACKAGE}" \
     org.opencontainers.image.source="https://github.com/${PACKAGE}"
 
 WORKDIR /app
+
+EXPOSE 80
+EXPOSE 443
 
 ENTRYPOINT ["web"]

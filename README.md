@@ -17,3 +17,4 @@ $ make migration_up
 ```
 curl "http://localhost:8080/get?question=Quelle%20est%20la%20capital%20de%20la%20France%3F"
 ```
+

@@ -1,9 +1,15 @@
 services:
   web:
-    build: ./deployments/web/.
+    image: d5avard/web:0.1.15
     ports:
       - "8080:80"
-    user:  "webuser"
+      - "8443:443"
+    user: "webuser"
+    environment:
+      WEB_CERT_FILE: "/app/certs/fullchain.pem"
+      WEB_KEY_FILE: "/app/certs/privkey.pem"
+    volumes:
+      - /Users/danysavard/Projects/factory/web/web/certs:/app/certs:ro
   db:
     container_name: postgres
     image: postgres:17.3-bookworm
