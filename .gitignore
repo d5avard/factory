@@ -39,3 +39,4 @@ certs/
 .DS_Store
 *.txt
 *.md
+*.log

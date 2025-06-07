@@ -71,7 +71,13 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = tmpl.Execute(w, nil); err != nil {
+	var output = struct {
+		Host string
+	}{
+		r.Host,
+	}
+
+	if err = tmpl.Execute(w, output); err != nil {
 		internal.HttpError(w, r, err.Error(), http.StatusInternalServerError)
 		return
 	}

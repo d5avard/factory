@@ -66,7 +66,7 @@ func connect(config internal.Config) error {
 	a := AnswerRec{Answer: "Paris"}
 	ts := TagsRec{Tags: []string{"geography", "capital", "France"}}
 	var id int
-	id, err = AddQuestionAnswerTags(ctx, conn, q, a, ts)
+	id, err = InsertQuestionAnswerTags(ctx, conn, q, a, ts)
 	if err != nil {
 		return fmt.Errorf("add question answer tags error: %w", err)
 	}
@@ -75,7 +75,7 @@ func connect(config internal.Config) error {
 	return nil
 }
 
-func AddQuestionAnswerTags(ctx context.Context, conn *pgxpool.Pool, q QuestionRec, a AnswerRec, ts TagsRec) (int, error) {
+func InsertQuestionAnswerTags(ctx context.Context, conn *pgxpool.Pool, q QuestionRec, a AnswerRec, ts TagsRec) (int, error) {
 	const INSERT_QUERY = `SELECT insert_question_answer_tags($1, $2, $3)`
 	var questionId int
 	err := conn.QueryRow(ctx, INSERT_QUERY, q.Question, a.Answer, ts.Tags).Scan(&questionId)
