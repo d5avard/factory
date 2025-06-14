@@ -6,9 +6,11 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/d5avard/factory/internal"
 	"github.com/d5avard/factory/internal/chatgpt"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 var port string
@@ -17,21 +19,12 @@ var rootCmd = &cobra.Command{
 	Use:   "requester",
 	Short: "Run the requester HTTP server",
 	Run: func(cmd *cobra.Command, args []string) {
-		router := mux.NewRouter()
-		router.HandleFunc("/status", statusHandler).Methods("GET")
-		// router.HandleFunc("/messages", messagesHandler).Methods("POST")
-		http.Handle("/", router)
-		log.Printf("Starting server on %s", port)
-		// if err := http.ListenAndServe(port, nil); err != nil {
-		addr := fmt.Sprintf("localhost:%s", port)
-		if err := http.ListenAndServe(addr, nil); err != nil {
-			log.Fatalf("Could not start server: %s", err)
-		}
+		run()
 	},
 }
 
 func init() {
-	rootCmd.Flags().StringVar(&port, "port", ":80", "Port to run the server on")
+	rootCmd.Flags().StringVar(&port, "port", "80", "Port to run the server on")
 }
 
 type Response struct {
@@ -110,4 +103,37 @@ func main() {
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// type Server struct {
+// 	http
+// }
+
+// func NewServer() *Server {
+// 	return &Server{}
+// }
+
+func run() {
+
+	logger := internal.NewLogger("logs", "requester.log")
+	defer logger.Close()
+
+	// Example logs
+	// logger.Info("Service started", zap.String("env", "production"), zap.Time("started_at", time.Now()))
+	// logger.Warn("Disk space low", zap.Int("available_MB", 500))
+	// logger.Error("Failed to connect to DB", zap.String("host", "localhost"), zap.Int("port", 5432))
+
+	router := mux.NewRouter()
+	router.HandleFunc("/status", statusHandler).Methods("GET")
+	// router.HandleFunc("/messages", messagesHandler).Methods("POST")
+	http.Handle("/", router)
+	logger.Info("starting server", zap.String("port", port))
+
+	addr := fmt.Sprintf("localhost:%s", port)
+
+	logger.Info("Server starting", zap.String("address", addr))
+	if err := http.ListenAndServe(addr, nil); err != nil {
+		logger.Error("could not start server", zap.String("error", err.Error()))
+	}
+	logger.Info("stop server")
 }

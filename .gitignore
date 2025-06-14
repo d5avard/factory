@@ -36,7 +36,9 @@ bin/
 # certs folder
 certs/
 
+# logs folder
+logs/
+
 .DS_Store
 *.txt
 *.md
-*.log
