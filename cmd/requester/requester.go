@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
-	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/d5avard/factory/internal"
 	"github.com/d5avard/factory/internal/requester"
@@ -51,12 +55,29 @@ func run() {
 		requester.MessagesRoutes{},
 	}
 
-	addr := fmt.Sprintf("localhost:%s", port)
-	logger.Info("Server starting", zap.String("address", addr))
-
 	server := internal.NewServer(logger, router, routes)
-	if err := http.ListenAndServe(addr, server.Router); err != nil {
-		logger.Error("could not start server", zap.String("error", err.Error()))
+	addr := fmt.Sprintf("localhost:%s", port)
+
+	go func() {
+		if err := server.Start(addr); err != nil {
+			logger.Error("Server failed to start", zap.String("address", addr), zap.Error(err))
+			os.Exit(1)
+		}
+	}()
+
+	// Graceful shutdown setup
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	<-quit
+	logger.Info("Shutdown signal received")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		logger.Error("Forced shutdown", zap.Error(err))
+	} else {
+		logger.Info("Server shutdown gracefully")
 	}
-	logger.Info("stop server")
 }

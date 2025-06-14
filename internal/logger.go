@@ -1,10 +1,13 @@
 package internal
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path"
+	"syscall"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -27,13 +30,12 @@ type Logger struct {
 }
 
 func (l *Logger) Close() {
-	if err := l.Sync(); err != nil {
-		log.Printf("failed to sync logger: %v", err)
+	if err := l.Sync(); err != nil && !(errors.Is(err, syscall.ENOTTY)) {
+		fmt.Println(err)
 	}
 }
 
 func (l *Logger) SetLevel(level zapcore.Level) {
-	// Set the logging level dynamically
 	l.Logger.Core().Enabled(level)
 	atomicLevel := zap.NewAtomicLevelAt(level)
 	l.Logger = *l.Logger.WithOptions(zap.IncreaseLevel(atomicLevel))
