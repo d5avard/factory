@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -13,10 +14,9 @@ import (
 	"github.com/d5avard/factory/internal/requester"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
-
-var port string
 
 var rootCmd = &cobra.Command{
 	Use:   "requester",
@@ -27,11 +27,24 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.Flags().StringVar(&port, "port", "80", "Port to run the server on")
-}
+	cobra.OnInitialize(func() {
+		viper.AddConfigPath("./config")
+		viper.SetConfigName("requester")
+		viper.SetConfigType("toml")
+		if err := viper.ReadInConfig(); err == nil {
+			log.Println("Using config file:", viper.ConfigFileUsed())
+		}
+	})
 
-type Response struct {
-	Message string `json:"message"`
+	rootCmd.PersistentFlags().Int("port", 8000, "Server port")
+	rootCmd.PersistentFlags().String("host", "localhost", "Port to run the server on")
+
+	_ = viper.BindPFlag("server.port", rootCmd.PersistentFlags().Lookup("port"))
+	_ = viper.BindPFlag("server.host", rootCmd.PersistentFlags().Lookup("host"))
+
+	viper.SetEnvPrefix("REQUESTER")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
 }
 
 func main() {
@@ -49,6 +62,23 @@ func run() {
 	// logger.Warn("Disk space low", zap.Int("available_MB", 500))
 	// logger.Error("Failed to connect to DB", zap.String("host", "localhost"), zap.Int("port", 5432))
 
+	type Config struct {
+		Server struct {
+			Port int
+		}
+		Chatgtp struct {
+			APIKey string `mapstructure:"api_key"`
+		}
+	}
+
+	var config Config
+	if err := viper.Unmarshal(&config); err != nil {
+		log.Fatalf("unmarshal error: %v", err)
+	}
+
+	port := viper.GetInt("server.port")
+	host := viper.GetString("server.host")
+
 	router := mux.NewRouter()
 	routes := []internal.RouteInjector{
 		requester.StatusRoutes{},
@@ -56,7 +86,7 @@ func run() {
 	}
 
 	server := internal.NewServer(logger, router, routes)
-	addr := fmt.Sprintf("localhost:%s", port)
+	addr := fmt.Sprintf("%s:%d", host, port)
 
 	go func() {
 		if err := server.Start(addr); err != nil {
